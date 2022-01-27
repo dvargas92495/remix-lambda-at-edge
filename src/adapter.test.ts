@@ -431,4 +431,37 @@ describe("createRequestHandler", () => {
         expect(res.body).toBe("");
       });
   });
+
+  it("allows custom origin paths", async () => {
+    mockedCreateRequestHandler.mockImplementation(() => async () => {
+      return new Response("");
+    });
+
+    const tester = lambdaTester(
+      createRequestHandler({
+        build: undefined,
+        originPaths: ["favicon.ico", /\/build\/.*/]
+      })
+    );
+    tester
+      .event(createMockEvent({ uri: "/favicon.ico" }))
+      .expectResult((res: CloudFrontRequest) => {
+        expect(res.uri).toBe("/favicon.ico");
+      })
+      .then(() => {
+        return tester
+          .event(createMockEvent({ uri: "/build/index-RANDHASH.js" }))
+          .expectResult((res: CloudFrontRequest) => {
+            expect(res.uri).toBe("/build/index-RANDHASH.js");
+          });
+      })
+      .then(() => {
+        return tester
+          .event(createMockEvent({ uri: "/foo/bar" }))
+          .expectResolve((res: CloudFrontResultResponse) => {
+            expect(res.status).toBe("200");
+            expect(res.body).toBe("URL: /foo/bar");
+          });
+      });
+  });
 });

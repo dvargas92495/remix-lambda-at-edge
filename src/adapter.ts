@@ -28,32 +28,39 @@ export type RequestHandler = ReturnType<typeof createRequestHandler>;
 export function createRequestHandler({
   build,
   getLoadContext,
-  mode = process.env.NODE_ENV
+  mode = process.env.NODE_ENV,
+  originPaths = []
 }: {
   build: ServerBuild;
   getLoadContext?: GetLoadContextFunction;
   mode?: string;
+  originPaths?: (string | RegExp)[];
 }): CloudFrontRequestHandler {
   let platform: ServerPlatform = { formatServerError };
   let handleRequest = createRemixRequestHandler(build, platform, mode);
+  const originPathRegexes = originPaths.map(s =>
+    typeof s === "string" ? new RegExp(s) : s
+  );
 
-  return async (event, context) => {
+  return (event, context, callback) => {
+    const cloudfrontRequest = event.Records[0].cf.request;
+    if (originPathRegexes.some(r => r.test(cloudfrontRequest.uri))) {
+      return callback(undefined, cloudfrontRequest);
+    }
+
     let request = createRemixRequest(event);
 
     let loadContext =
       typeof getLoadContext === "function" ? getLoadContext(event) : undefined;
 
-    let response = (await handleRequest(
-      request as unknown as Request,
-      loadContext
-    )) as unknown as NodeResponse;
-
-    return {
-      status: String(response.status),
-      headers: createCloudFrontHeaders(response.headers),
-      bodyEncoding: "text",
-      body: await response.text()
-    };
+    return handleRequest(request as unknown as Request, loadContext).then(
+      async (response) => ({
+        status: String(response.status),
+        headers: createCloudFrontHeaders((response as unknown as NodeResponse).headers),
+        bodyEncoding: "text",
+        body: await response.text()
+      })
+    );
   };
 }
 
