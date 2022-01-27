@@ -1,5 +1,5 @@
 {
-  "name": "remix-lambda-at-edge",
+  "name": "@dvargas92495/remix-lambda-at-edge",
   "description": "Lambda@Edge adapter for Remix",
   "version": "0.2.0",
   "repository": {
