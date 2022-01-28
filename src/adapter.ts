@@ -29,12 +29,14 @@ export function createRequestHandler({
   build,
   getLoadContext,
   mode = process.env.NODE_ENV,
-  originPaths = []
+  originPaths = [],
+  onError = () => {},
 }: {
   build: ServerBuild;
   getLoadContext?: GetLoadContextFunction;
   mode?: string;
   originPaths?: (string | RegExp)[];
+  onError?: (e: Error) => void;
 }): CloudFrontRequestHandler {
   let platform: ServerPlatform = { formatServerError };
   let handleRequest = createRemixRequestHandler(build, platform, mode);
@@ -57,10 +59,20 @@ export function createRequestHandler({
       async (response) => ({
         status: String(response.status),
         headers: createCloudFrontHeaders((response as unknown as NodeResponse).headers),
-        bodyEncoding: "text",
+        bodyEncoding: "text" as const,
         body: await response.text()
       })
-    );
+    ).catch((e) => {
+      console.error('Remix failed to handle request:');
+      console.error(e);
+      onError(e);
+      return {
+        status: '500',
+        headers: {},
+        bodyEncoding: "text" as const,
+        body: e.message,
+      }
+    });
   };
 }
 

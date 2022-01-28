@@ -464,4 +464,32 @@ describe("createRequestHandler", () => {
           });
       });
   });
+
+  it("calls onError when there's an error", async () => {
+    const oldConsoleError = global.console.error;
+    global.console.error = jest.fn();
+    const msg = "Runtime Error";
+    const err = new Error(msg);
+    mockedCreateRequestHandler.mockImplementation(() => async () => {
+      throw err;
+    });
+
+    const mockEvent = createMockEvent({ uri: "/" });
+    const onError = jest.fn();
+
+    await lambdaTester(
+      createRequestHandler({
+        build: undefined,
+        onError
+      })
+    )
+      .event(mockEvent)
+      .expectResolve(res => {
+        expect(onError).toHaveBeenCalledWith(err);
+        expect(res.status).toBe("500");
+        expect(res.body).toBe(msg);
+        expect(global.console.error).toBeCalledTimes(2);
+        global.console.error = oldConsoleError
+      });
+  });
 });
