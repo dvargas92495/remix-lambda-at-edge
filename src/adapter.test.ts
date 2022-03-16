@@ -329,7 +329,7 @@ describe("createRequestHandler", () => {
       return new Response(`URL: ${new URL(req.url).pathname}`);
     });
 
-    await lambdaTester(createRequestHandler({ build: undefined }))
+    await lambdaTester(createRequestHandler({ getBuild: () => undefined }))
       .event(createMockEvent({ uri: "/foo/bar" }))
       .expectResolve((res: CloudFrontResultResponse) => {
         expect(res.status).toBe("200");
@@ -342,7 +342,7 @@ describe("createRequestHandler", () => {
       return new Response(null, { status: 200 });
     });
 
-    await lambdaTester(createRequestHandler({ build: undefined }))
+    await lambdaTester(createRequestHandler({ getBuild: () => undefined }))
       .event(createMockEvent({ uri: "/foo/bar" }))
       .expectResolve((res: CloudFrontResultResponse) => {
         expect(res.status).toBe("200");
@@ -355,7 +355,7 @@ describe("createRequestHandler", () => {
       return new Response("", { status: 204 });
     });
 
-    await lambdaTester(createRequestHandler({ build: undefined }))
+    await lambdaTester(createRequestHandler({ getBuild: () => undefined }))
       .event(createMockEvent({ uri: "/foo/bar" }))
       .expectResolve((res: CloudFrontResultResponse) => {
         expect(res.status).toBe("204");
@@ -383,7 +383,7 @@ describe("createRequestHandler", () => {
       return new Response("", { headers });
     });
 
-    await lambdaTester(createRequestHandler({ build: undefined }))
+    await lambdaTester(createRequestHandler({ getBuild: () => undefined }))
       .event(createMockEvent({ uri: "/" }))
       .expectResolve((res: CloudFrontResultResponse) => {
         expect(res.status).toBe("200");
@@ -421,7 +421,7 @@ describe("createRequestHandler", () => {
 
     await lambdaTester(
       createRequestHandler({
-        build: undefined,
+        getBuild: () => undefined,
         getLoadContext: mockGetLoadContent
       })
     )
@@ -440,7 +440,7 @@ describe("createRequestHandler", () => {
 
     const tester = lambdaTester(
       createRequestHandler({
-        build: undefined,
+        getBuild: () => undefined,
         originPaths: ["favicon.ico", /\/build\/.*/]
       })
     );
@@ -480,7 +480,7 @@ describe("createRequestHandler", () => {
 
     await lambdaTester(
       createRequestHandler({
-        build: undefined,
+        getBuild: () => undefined,
         onError
       })
     )

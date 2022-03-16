@@ -25,25 +25,24 @@ export interface GetLoadContextFunction {
 export type RequestHandler = ReturnType<typeof createRequestHandler>;
 
 export function createRequestHandler({
-  build,
+  getBuild,
   getLoadContext,
   mode = process.env.NODE_ENV,
   originPaths = [],
   onError = () => {}
 }: {
-  build: ServerBuild;
+  getBuild: () => ServerBuild;
   getLoadContext?: GetLoadContextFunction;
   mode?: string;
   originPaths?: (string | RegExp)[];
   onError?: (e: Error) => void;
 }): CloudFrontRequestHandler {
-  let platform: ServerPlatform = {};
-  let handleRequest = createRemixRequestHandler(build, platform, mode);
-  const originPathRegexes = originPaths.map(s =>
-    typeof s === "string" ? new RegExp(s) : s
-  );
-
   return (event, context, callback) => {
+    let platform: ServerPlatform = {};
+    const originPathRegexes = originPaths.map(s =>
+      typeof s === "string" ? new RegExp(s) : s
+    );
+
     const cloudfrontRequest = event.Records[0].cf.request;
     if (originPathRegexes.some(r => r.test(cloudfrontRequest.uri))) {
       /* Continue this work if you foresee viability of s3Origin
@@ -69,6 +68,7 @@ export function createRequestHandler({
       context.callbackWaitsForEmptyEventLoop = false;
       return callback(undefined, cloudfrontRequest);
     }
+    let handleRequest = createRemixRequestHandler(getBuild(), platform, mode);
 
     let request = createRemixRequest(event);
 

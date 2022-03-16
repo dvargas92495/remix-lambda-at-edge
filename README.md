@@ -7,10 +7,10 @@ This adapter transforms [CloudFront Origin Request Events](https://docs.aws.amaz
 ## Usage
 
 ```ts
-import { createRequestHandler } from "???";
+import { createRequestHandler } from "remix-lambda-at-edge";
 
 export const handler = createRequestHandler({
-  build: require("./build"),
+  getBuild: () => require("./build"),
   getLoadContext: event => {
     // access to raw CloudFront event to provide context to loaders
   },
