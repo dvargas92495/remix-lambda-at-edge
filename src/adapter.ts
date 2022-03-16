@@ -30,7 +30,7 @@ export function createRequestHandler({
   getLoadContext,
   mode = process.env.NODE_ENV,
   originPaths = [],
-  onError = () => {},
+  onError = () => {}
 }: {
   build: ServerBuild;
   getLoadContext?: GetLoadContextFunction;
@@ -47,6 +47,27 @@ export function createRequestHandler({
   return (event, context, callback) => {
     const cloudfrontRequest = event.Records[0].cf.request;
     if (originPathRegexes.some(r => r.test(cloudfrontRequest.uri))) {
+     /* Continue this work if you foresee viability of s3Origin
+      const s3headers = new Set([
+        "origin",
+        "access-control-request-headers",
+        "access-control-request-method",
+        "accept-encoding",
+        "content-length",
+        "if-modified-since",
+        "if-none-match",
+        "if-range",
+        "if-unmodified-since",
+        "transfer-encoding",
+        "via",
+      ]);
+      Object.keys(cloudfrontRequest.headers).forEach(k => {
+        if (!s3headers.has(k)) {
+          delete cloudfrontRequest.headers[k];
+        }
+      });
+      */
+      context.callbackWaitsForEmptyEventLoop = false;
       return callback(undefined, cloudfrontRequest);
     }
 
@@ -55,24 +76,26 @@ export function createRequestHandler({
     let loadContext =
       typeof getLoadContext === "function" ? getLoadContext(event) : undefined;
 
-    return handleRequest(request as unknown as Request, loadContext).then(
-      async (response) => ({
+    return handleRequest(request as unknown as Request, loadContext)
+      .then(async response => ({
         status: String(response.status),
-        headers: createCloudFrontHeaders((response as unknown as NodeResponse).headers),
+        headers: createCloudFrontHeaders(
+          (response as unknown as NodeResponse).headers
+        ),
         bodyEncoding: "text" as const,
         body: await response.text()
-      })
-    ).catch((e) => {
-      console.error('Remix failed to handle request:');
-      console.error(e);
-      onError(e);
-      return {
-        status: '500',
-        headers: {},
-        bodyEncoding: "text" as const,
-        body: e.message,
-      }
-    });
+      }))
+      .catch(e => {
+        console.error("Remix failed to handle request:");
+        console.error(e);
+        onError(e);
+        return {
+          status: "500",
+          headers: {},
+          bodyEncoding: "text" as const,
+          body: e.message
+        };
+      });
   };
 }
 
