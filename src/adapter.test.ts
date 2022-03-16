@@ -265,7 +265,8 @@ describe("createRemixRequest", () => {
         })
       )
     ).toMatchInlineSnapshot(`
-      Request {
+      NodeRequest {
+        "abortController": undefined,
         "agent": undefined,
         "compress": true,
         "counter": 0,

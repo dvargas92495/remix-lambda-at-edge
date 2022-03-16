@@ -2,8 +2,7 @@ import { URL } from "url";
 
 import {
   Headers as NodeHeaders,
-  Request as NodeRequest,
-  formatServerError
+  Request as NodeRequest
 } from "@remix-run/node";
 import { createRequestHandler as createRemixRequestHandler } from "@remix-run/server-runtime";
 
@@ -38,7 +37,7 @@ export function createRequestHandler({
   originPaths?: (string | RegExp)[];
   onError?: (e: Error) => void;
 }): CloudFrontRequestHandler {
-  let platform: ServerPlatform = { formatServerError };
+  let platform: ServerPlatform = {};
   let handleRequest = createRemixRequestHandler(build, platform, mode);
   const originPathRegexes = originPaths.map(s =>
     typeof s === "string" ? new RegExp(s) : s
@@ -47,7 +46,7 @@ export function createRequestHandler({
   return (event, context, callback) => {
     const cloudfrontRequest = event.Records[0].cf.request;
     if (originPathRegexes.some(r => r.test(cloudfrontRequest.uri))) {
-     /* Continue this work if you foresee viability of s3Origin
+      /* Continue this work if you foresee viability of s3Origin
       const s3headers = new Set([
         "origin",
         "access-control-request-headers",
