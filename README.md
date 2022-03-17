@@ -17,5 +17,6 @@ export const handler = createRequestHandler({
   // mode?: string; development or production, defaulted to NODE_ENV 
   // originPaths?: (string | RegExp)[]; set of paths returned to cloudfront to lookup in S3 instead
   // onError?: (e: Error) => void; method called if remix fails to handle the request for any reason
+  // debug?: boolean; add extra logging to cloudfront, defaults to false
 });
 ```

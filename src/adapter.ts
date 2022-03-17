@@ -29,12 +29,14 @@ export function createRequestHandler({
   getLoadContext,
   mode = process.env.NODE_ENV,
   originPaths = [],
+  debug = false,
   onError = () => {}
 }: {
   getBuild: () => ServerBuild;
   getLoadContext?: GetLoadContextFunction;
   mode?: string;
   originPaths?: (string | RegExp)[];
+  debug?: boolean;
   onError?: (e: Error) => void;
 }): CloudFrontRequestHandler {
   return (event, context, callback) => {
@@ -44,6 +46,12 @@ export function createRequestHandler({
     );
 
     const cloudfrontRequest = event.Records[0].cf.request;
+    if (debug)
+      console.log(
+        `HANDLING ${cloudfrontRequest.method} ${cloudfrontRequest.uri} ${
+          cloudfrontRequest.querystring
+        } ${JSON.stringify(cloudfrontRequest.headers, null, 4)}`
+      );
     if (originPathRegexes.some(r => r.test(cloudfrontRequest.uri))) {
       /* Continue this work if you foresee viability of s3Origin
       const s3headers = new Set([
