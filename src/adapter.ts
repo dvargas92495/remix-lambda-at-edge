@@ -13,8 +13,7 @@ import type {
 } from "aws-lambda";
 import type {
   AppLoadContext,
-  ServerBuild,
-  ServerPlatform
+  ServerBuild
 } from "@remix-run/server-runtime";
 import type { Response as NodeResponse } from "@remix-run/node";
 
@@ -40,7 +39,6 @@ export function createRequestHandler({
   onError?: (e: Error) => void;
 }): CloudFrontRequestHandler {
   return (event, context, callback) => {
-    let platform: ServerPlatform = {};
     const originPathRegexes = originPaths.map(s =>
       typeof s === "string" ? new RegExp(s) : s
     );
@@ -76,7 +74,7 @@ export function createRequestHandler({
       context.callbackWaitsForEmptyEventLoop = false;
       return callback(undefined, cloudfrontRequest);
     }
-    let handleRequest = createRemixRequestHandler(getBuild(), platform, mode);
+    let handleRequest = createRemixRequestHandler(getBuild(), mode);
 
     let request = createRemixRequest(event);
 
