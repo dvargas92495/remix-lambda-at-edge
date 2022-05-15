@@ -9,12 +9,9 @@ import { createRequestHandler as createRemixRequestHandler } from "@remix-run/se
 import type {
   CloudFrontRequestEvent,
   CloudFrontRequestHandler,
-  CloudFrontHeaders
+  CloudFrontHeaders,
 } from "aws-lambda";
-import type {
-  AppLoadContext,
-  ServerBuild
-} from "@remix-run/server-runtime";
+import type { AppLoadContext, ServerBuild } from "@remix-run/server-runtime";
 import type { Response as NodeResponse } from "@remix-run/node";
 
 export interface GetLoadContextFunction {
@@ -79,9 +76,12 @@ export function createRequestHandler({
     let request = createRemixRequest(event);
 
     let loadContext =
-      typeof getLoadContext === "function" ? getLoadContext(event) : undefined;
+      typeof getLoadContext === "function" ? getLoadContext(event) : {};
 
-    return handleRequest(request as unknown as Request, loadContext)
+    return handleRequest(request as unknown as Request, {
+      ...loadContext,
+      lambdaContext: context
+    })
       .then(async response => ({
         status: String(response.status),
         headers: createCloudFrontHeaders(
