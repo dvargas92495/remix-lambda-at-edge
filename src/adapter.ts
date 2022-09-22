@@ -9,7 +9,7 @@ import { createRequestHandler as createRemixRequestHandler } from "@remix-run/se
 import type {
   CloudFrontRequestEvent,
   CloudFrontRequestHandler,
-  CloudFrontHeaders,
+  CloudFrontHeaders
 } from "aws-lambda";
 import type { AppLoadContext, ServerBuild } from "@remix-run/server-runtime";
 import type { Response as NodeResponse } from "@remix-run/node";
@@ -31,13 +31,21 @@ export function createRequestHandler({
   getBuild: () => ServerBuild;
   getLoadContext?: GetLoadContextFunction;
   mode?: string;
-  originPaths?: (string | RegExp)[];
+  originPaths?: (
+    | string
+    | RegExp
+    | { test: RegExp; mapper: ((s: string) => Promise<string>) | null }
+  )[];
   debug?: boolean;
   onError?: (e: Error) => void;
 }): CloudFrontRequestHandler {
   return (event, context, callback) => {
     const originPathRegexes = originPaths.map(s =>
-      typeof s === "string" ? new RegExp(s) : s
+      typeof s === "string"
+        ? { test: new RegExp(s), mapper: null }
+        : s instanceof RegExp
+        ? { test: s, mapper: null }
+        : s
     );
 
     const cloudfrontRequest = event.Records[0].cf.request;
@@ -47,7 +55,10 @@ export function createRequestHandler({
           cloudfrontRequest.querystring
         } ${JSON.stringify(cloudfrontRequest.headers, null, 4)}`
       );
-    if (originPathRegexes.some(r => r.test(cloudfrontRequest.uri))) {
+    const originPathMatched = originPathRegexes.find(r =>
+      r.test.test(cloudfrontRequest.uri)
+    );
+    if (originPathMatched) {
       /* Continue this work if you foresee viability of s3Origin
       const s3headers = new Set([
         "origin",
@@ -69,6 +80,17 @@ export function createRequestHandler({
       });
       */
       context.callbackWaitsForEmptyEventLoop = false;
+      if (originPathMatched.mapper) {
+        return originPathMatched
+          .mapper(cloudfrontRequest.uri)
+          .then(newUri => {
+            cloudfrontRequest.uri = newUri;
+            return cloudfrontRequest;
+          })
+          .catch(() => {
+            return cloudfrontRequest;
+          });
+      }
       return callback(undefined, cloudfrontRequest);
     }
     let handleRequest = createRemixRequestHandler(getBuild(), mode);
