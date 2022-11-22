@@ -84,6 +84,21 @@ export function createRequestHandler({
         return originPathMatched
           .mapper(cloudfrontRequest.uri)
           .then(newUri => {
+            if (/^https?:\/\//.test(newUri)) {
+              callback(undefined, {
+                status: "301",
+                statusDescription: "Moved Permanently",
+                headers: {
+                  location: [
+                    {
+                      key: "Location",
+                      value: newUri
+                    }
+                  ]
+                }
+              });
+              return;
+            }
             cloudfrontRequest.uri = newUri;
             return cloudfrontRequest;
           })
