@@ -1,7 +1,7 @@
 {
   "name": "remix-lambda-at-edge",
   "description": "Lambda@Edge adapter for Remix",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "repository": {
     "type": "git",
     "url": "https://github.com/dvargas92495/remix-lambda-at-edge.git"
